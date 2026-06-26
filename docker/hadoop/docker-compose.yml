@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  namenode:
+    build: .
+    hostname: namenode
+    container_name: namenode
+    environment:
+      - ROLE=namenode
+    ports:
+      - "9870:9870" # HDFS Web UI
+      - "8088:8088" # YARN Web UI
+      - "9000:9000" # HDFS 통신 포트
+    networks:
+      - hadoop-net
+    volumes:
+      - namenode-data:/opt/hadoop/data/namenode
+    mem_limit: 1g
+
+  datanode1:
+    build: .
+    hostname: datanode1
+    container_name: datanode1
+    environment:
+      - ROLE=datanode
+      - HADOOP_DATANODE_OPTS=-Ddfs.datanode.http.address=0.0.0.0:9864
+    ports:
+      - "9864:9864"
+    networks:
+      - hadoop-net
+    volumes:
+      - dn1-data:/opt/hadoop/data/datanode
+    mem_limit: 512m
+    depends_on:
+      - namenode
+
+  datanode2:
+    build: .
+    hostname: datanode2
+    container_name: datanode2
+    environment:
+      - ROLE=datanode
+      - HADOOP_DATANODE_OPTS=-Ddfs.datanode.http.address=0.0.0.0:9865
+    ports:
+      - "9865:9865"
+    networks:
+      - hadoop-net
+    volumes:
+      - dn2-data:/opt/hadoop/data/datanode
+    mem_limit: 512m
+    depends_on:
+      - namenode
+
+  datanode3:
+    build: .
+    hostname: datanode3
+    container_name: datanode3
+    environment:
+      - ROLE=datanode
+      - HADOOP_DATANODE_OPTS=-Ddfs.datanode.http.address=0.0.0.0:9866
+    ports:
+      - "9866:9866"
+    networks:
+      - hadoop-net
+    volumes:
+      - dn3-data:/opt/hadoop/data/datanode
+    mem_limit: 512m
+    depends_on:
+      - namenode
+
+  jupyter:
+    image: jupyter/minimal-notebook:latest
+    container_name: jupyter
+    user: root
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=hadoop
+    volumes:
+      - .:/home/jovyan/work
+    networks:
+      - hadoop-net
+    depends_on:
+      - namenode
+
+networks:
+  hadoop-net:
+    driver: bridge
+
+volumes:
+  namenode-data:
+  dn1-data:
+  dn2-data:
+  dn3-data:

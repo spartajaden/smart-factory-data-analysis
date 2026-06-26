@@ -1,0 +1,22 @@
+services:
+  pkuser01:
+    image: pkteam:1.0
+    hostname: PK01
+    ports:
+      - "2201:22" # 1. 기존 SSH 접속용 포트
+      - "8081:8080" # 2. 추가한 Spring Boot 접속용 포트
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - D:/data/container_ssh/pkuser01:/home/pkuser/data
+
+  pkuser02:
+    image: pkteam:1.0
+    hostname: PK02
+    ports:
+      - "2202:22"
+      - "8082:8080"
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - D:/data/container_ssh/pkuser02:/home/pkuser/data

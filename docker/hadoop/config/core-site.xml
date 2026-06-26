@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <!-- HDFS의 기본 파일시스템 주소 설정 -->
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://namenode:9000</value>
+    </property>
+    <!-- Hadoop 임시 디렉토리 설정 -->
+    <property>
+        <name>hadoop.tmp.dir</name>
+        <value>/opt/hadoop/data/tmp</value>
+    </property>
+</configuration>

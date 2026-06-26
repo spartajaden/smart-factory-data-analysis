@@ -1,0 +1,14 @@
+{
+  "name": "my node js",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash"
+  },
+  "forwardPorts": [5173, 3300, 22],
+  "postCreateCommand": "npm install express && echo 'Ready!'",
+  "mounts": [
+    "source=D:/data/container_data/dist,target=D:/code/React-2026/docker/dev_nodejs/dist,type=bind"
+  ]
+}

@@ -1,0 +1,182 @@
+================================================================================
+  Jupyter → NameNode 연동 & HDFS CRUD 실습 노트북 구현 계획서 (v2)
+================================================================================
+
+■ 목표
+  Jupyter 컨테이너에서 동일 Docker 네트워크(hadoop-net) 내의 NameNode에
+  WebHDFS(9870)로 접속하여, HDFS 데이터를 Python으로 CRUD하는 예제를
+  hadoop_hdfs.ipynb에 구현한다.
+
+================================================================================
+현재 상태 분석
+================================================================================
+
+[이미 완료] ✅
+  1. docker-compose.yml → jupyter 서비스 추가됨
+  2. hadoop_hdfs.ipynb   → CRUD 코드 초안 작성됨
+  3. hdfs-site.xml       → dfs.permissions.enabled=false (권한 비활성화)
+
+[Hadoop 3.3.6 기본값 확인] ✅ (수정 불필요)
+  - dfs.webhdfs.enabled  = true (기본값) → 별도 설정 불필요
+  - dfs.support.append   = true (기본값) → 별도 설정 불필요
+
+================================================================================
+수정 대상 파일
+================================================================================
+
+  파일                    작업      설명
+  ──────────────────      ──────   ─────────────────────────────
+  hadoop_hdfs.ipynb       재작성   CRUD 예제 보강 (20셀 → 체계적 구성)
+
+  ※ config/hdfs-site.xml  수정 불필요 (Hadoop 3.3.6 기본값으로 충분)
+  ※ docker-compose.yml    수정 불필요 (jupyter 서비스 이미 존재)
+
+================================================================================
+구현 계획 (2단계)
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  단계 1: hadoop_hdfs.ipynb 재작성
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  셀#   타입        내용
+  ───   ────        ──────────────────────────────────────────────
+  1     Markdown    제목 & 실습 개요
+                    - 목표 설명
+                    - 아키텍처: Jupyter → namenode:9870 (WebHDFS)
+                    - 사용 라이브러리: hdfs (Python)
+
+  2     Code        패키지 설치
+                    !pip install hdfs
+
+  3     Code        네트워크 진단 (내 IP & namenode 접속 확인)
+                    ──────────────────────────────────────────
+                    ⚠️ !hostname -I 는 이 이미지에서 동작하지 않음
+                       (jupyter/minimal-notebook은 경량 이미지라
+                        hostname 명령이 -I 옵션을 지원하지 않음)
+
+                    대안 1) Python으로 내 IP 확인
+                      import socket
+                      my_ip = socket.gethostbyname(socket.gethostname())
+                      print(f"Jupyter 컨테이너 IP: {my_ip}")
+
+                    대안 2) /etc/hosts 파일에서 확인
+                      !cat /etc/hosts
+
+                    대안 3) namenode DNS 해석 & 연결 테스트
+                      namenode_ip = socket.gethostbyname('namenode')
+                      print(f"NameNode IP: {namenode_ip}")
+                      !ping -c 2 namenode
+
+  4     Code        HDFS 클라이언트 초기화 & 연결 테스트
+                    from hdfs import InsecureClient
+                    client = InsecureClient('http://namenode:9870', user='root')
+                    print(client.list('/'))
+                      ← 연결 성공 여부 즉시 확인
+
+  ─── Create (생성) ─────────────────────────────────────────────
+
+  4     Markdown    "1. Create (생성)" 섹션 제목
+
+  5     Code        1-1. 디렉토리 생성
+                    client.makedirs('/user/root/test_crud')
+
+  6     Code        1-2. 파일 직접 쓰기 (write)
+                    with client.write(path, encoding='utf-8') as w:
+                        w.write('Hello HDFS!\n')
+
+  7     Code        1-3. 로컬 파일 → HDFS 업로드 (upload)
+                    # 로컬 임시 파일 생성 후
+                    client.upload(hdfs_path, local_path, overwrite=True)
+
+  ─── Read (조회) ───────────────────────────────────────────────
+
+  8     Markdown    "2. Read (조회)" 섹션 제목
+
+  9     Code        2-1. 디렉토리 파일 목록 조회
+                    client.list(hdfs_dir)
+
+  10    Code        2-2. 파일 메타정보(상태) 조회
+                    client.status(hdfs_file_path)
+
+  11    Code        2-3. 파일 내용 읽기
+                    with client.read(path, encoding='utf-8') as r:
+                        print(r.read())
+
+  12    Code        2-4. HDFS → 로컬 다운로드
+                    client.download(hdfs_path, local_path, overwrite=True)
+
+  ─── Update (수정) ─────────────────────────────────────────────
+
+  13    Markdown    "3. Update (수정)" 섹션 제목
+
+  14    Code        3-1. Append (기존 파일에 내용 추가)
+                    with client.write(path, append=True, encoding='utf-8') as w:
+                        w.write('Appended!\n')
+
+  15    Code        3-2. Overwrite (파일 덮어쓰기)
+                    with client.write(path, overwrite=True, encoding='utf-8') as w:
+                        w.write('New content!\n')
+
+  16    Code        3-3. Rename (파일 이름 변경)
+                    client.rename(old_path, new_path)
+
+  17    Code        수정 결과 확인 (read로 검증)
+
+  ─── Delete (삭제) ─────────────────────────────────────────────
+
+  18    Markdown    "4. Delete (삭제)" 섹션 제목
+
+  19    Code        4-1. 개별 파일 삭제
+                    client.delete(file_path)
+
+  20    Code        4-2. 디렉토리 재귀 삭제 & 최종 검증
+                    client.delete(dir_path, recursive=True)
+                    # 삭제 후 상위 디렉토리 목록으로 검증
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  단계 2: 실행 검증
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1) 컨테이너 재시작 (설정 변경 없으므로 rebuild 불필요)
+     > docker compose down
+     > docker compose up -d
+
+  2) Hadoop 클러스터 정상 확인
+     - http://localhost:9870   → HDFS Web UI
+     - DataNode 3개 Live 확인
+
+  3) Jupyter 접속 & 노트북 실행
+     - http://localhost:8888   → token: hadoop
+     - work/hadoop_hdfs.ipynb 열기
+     - 셀 1~20 순차 실행
+
+  4) HDFS Web UI 교차 검증
+     - Utilities > Browse the file system
+     - /user/root/test_crud 파일 생성/수정/삭제 확인
+
+================================================================================
+네트워크 아키텍처
+================================================================================
+
+  ┌──────────────────── Docker Network: hadoop-net ────────────────────┐
+  │                                                                    │
+  │  ┌──────────┐    WebHDFS (9870)    ┌──────────────┐               │
+  │  │ Jupyter  │ ──────────────────→  │  NameNode    │               │
+  │  │ :8888    │                      │  :9870/:9000 │               │
+  │  └──────────┘                      └──────┬───────┘               │
+  │                                           │                        │
+  │                    ┌──────────────────────┼──────────────────┐     │
+  │                    │                      │                  │     │
+  │              ┌─────┴─────┐         ┌──────┴────┐     ┌──────┴───┐ │
+  │              │ DataNode1 │         │ DataNode2 │     │ DataNode3│ │
+  │              │ :9864     │         │ :9865     │     │ :9866    │ │
+  │              └───────────┘         └───────────┘     └──────────┘ │
+  │                                                                    │
+  └────────────────────────────────────────────────────────────────────┘
+
+  접속 경로: Jupyter → http://namenode:9870 (WebHDFS REST API)
+  통신 방식: Python hdfs 라이브러리 (InsecureClient)
+  인증 방식: dfs.permissions.enabled=false → user='root'로 무인증 접속
+
+================================================================================

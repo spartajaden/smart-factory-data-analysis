@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <!-- 복제 계수(replication factor) = 2 (DataNode 3개) -->
+    <property>
+        <name>dfs.replication</name>
+        <value>2</value>
+    </property>
+    <!-- NameNode 데이터 저장 경로 -->
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///opt/hadoop/data/namenode</value>
+    </property>
+    <!-- DataNode 데이터 저장 경로 -->
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///opt/hadoop/data/datanode</value>
+    </property>
+    <!-- HDFS Web UI 호스트 설정 -->
+    <property>
+        <name>dfs.namenode.http-bind-host</name>
+        <value>0.0.0.0</value>
+    </property>
+    <!-- HDFS Web UI 권한 에러 방지용 권한 검사 비활성화 -->
+    <property>
+        <name>dfs.permissions.enabled</name>
+        <value>false</value>
+    </property>
+</configuration>
