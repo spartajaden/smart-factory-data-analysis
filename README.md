@@ -4,6 +4,7 @@
 
 - 사이트
 https://factoryio.com/
+
 ![alt text](image-69.png)
 
 - 다운로드 & 설치
@@ -30,12 +31,15 @@ https://factoryio.com/download-archive
 ![alt text](image-78.png)
 
 - 제어
+
 ![alt text](image-79.png)
 
 - 시점
+
 ![alt text](image-80.png)
 
 - 오브젝트
+
 ![alt text](image-81.png)
 
 
